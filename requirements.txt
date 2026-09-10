@@ -1,0 +1,11 @@
+langchain
+langchain-classic
+langchain-community
+langchain-core
+langchain-text-splitters
+langchain-chroma
+chromadb
+langchain-google-genai
+python-dotenv
+flask
+pypdf 

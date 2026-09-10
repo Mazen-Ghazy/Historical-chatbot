@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot UI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <div class="chat-container">
+
+        <main class="chat-messages" id="chatMessages">
+            <!-- Messages will be added here -->
+        </main>
+
+        <form class="chat-input-area" id="chatForm">
+            <input
+                type="text"
+                id="messageInput"
+                class="message-input"
+                placeholder="Type a new message here"
+                autocomplete="off"
+            >
+
+            <div class="input-actions">
+                <button type="button" class="icon-btn" title="Attach file" aria-label="Attach file">📎</button>
+                <button type="button" class="icon-btn" title="Emoji" aria-label="Emoji">☺</button>
+                <button type="submit" class="send-btn" title="Send message" aria-label="Send message">➤</button>
+            </div>
+        </form>
+
+    </div>
+
+    <script>
+        const chatForm = document.getElementById("chatForm");
+        const messageInput = document.getElementById("messageInput");
+        const chatMessages = document.getElementById("chatMessages");
+
+        chatForm.addEventListener("submit", async function (event) {
+            event.preventDefault();
+
+            const message = messageInput.value.trim();
+
+            if (!message) {
+                return;
+            }
+
+            addUserMessage(message);
+            messageInput.value = "";
+
+            const loadingMessage = addBotMessage("Typing...");
+
+            try {
+                const response = await fetch("/get", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        msg: message
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error("Server error: " + response.status);
+                }
+
+                const botAnswer = await response.text();
+
+                loadingMessage.remove();
+                addBotMessage(botAnswer);
+
+            } catch (error) {
+                console.error(error);
+                loadingMessage.remove();
+                addBotMessage("Sorry, I couldn't connect to the chatbot server.");
+            }
+        });
+
+        function addUserMessage(message) {
+            const row = document.createElement("div");
+            row.className = "message-row user-row";
+            row.innerHTML = `
+                <div class="message user-message">${escapeHtml(message)}</div>
+                <div class="avatar user-avatar">👨🏻</div>
+            `;
+            chatMessages.appendChild(row);
+            scrollToBottom();
+        }
+
+        function addBotMessage(message) {
+            const row = document.createElement("div");
+            row.className = "message-row bot-row";
+            row.innerHTML = `
+                <div class="avatar bot-avatar">🤖</div>
+                <div class="message bot-message">${escapeHtml(message)}</div>
+                <button class="copy-btn" type="button" onclick="copyMessage(this)">⧉</button>
+            `;
+            chatMessages.appendChild(row);
+            scrollToBottom();
+            return row;
+        }
+
+        function copyMessage(button) {
+            const message = button.parentElement.querySelector(".message").innerText;
+            navigator.clipboard.writeText(message);
+        }
+
+        function scrollToBottom() {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement("div");
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+
+</body>
+
+</html>
